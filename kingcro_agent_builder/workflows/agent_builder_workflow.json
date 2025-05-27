@@ -1,94 +1,56 @@
 {
-  "name": "Agent Builder Pipeline",
+  "name": "KingCRO – Agentic Builder",
   "nodes": [
     {
       "parameters": {
         "httpMethod": "POST",
-        "path": "ai-checkin"
+        "path": "agent-builder"
       },
-      "name": "Webhook",
+      "name": "Inbound Webhook",
       "type": "n8n-nodes-base.webhook",
       "typeVersion": 1,
-      "position": [
-        250,
-        300
-      ]
+      "position": [240, 300]
     },
     {
       "parameters": {
-        "functionCode": "// transform / clean\nreturn [{ json: items[0].json }];"
+        "functionCode": "// 🔹 Basic keyword → intent mapping\n// Swap this stub for your MCP / LLM call later\nconst raw = items[0].json;\nconst text = (raw.text || '').toLowerCase();\nconst intent = text.includes('booking')     ? 'booking'\n            : text.includes('maintenance') ? 'maintenance'\n            : text.includes('report')      ? 'incident_report'\n            : 'general_query';\nreturn [{\n  json: {\n    received_at: new Date().toISOString(),\n    intent,\n    original_payload: raw,\n    ...raw\n  }\n}];"
       },
-      "name": "Preprocess",
+      "name": "Parse / Classify",
       "type": "n8n-nodes-base.function",
       "typeVersion": 1,
-      "position": [
-        450,
-        300
-      ]
+      "position": [480, 300]
     },
     {
       "parameters": {
         "operation": "executeQuery",
-        "query": "INSERT INTO visits_demo(unit, guest_names, phone, guest_count)\nVALUES ({{ $json.unit }}, {{ $json.guest_names }}, {{ $json.phone }}, {{ $json.guest_count }});"
+        "query": "INSERT INTO agent_builder_events (\n  received_at,\n  intent,\n  payload\n) VALUES (\n  {{$json[\"received_at\"]}},\n  {{$json[\"intent\"]}},\n  {{$json | dumpJSON }}\n);"
       },
-      "name": "Postgres",
+      "name": "Postgres ↳ Insert",
       "type": "n8n-nodes-base.postgres",
       "typeVersion": 1,
-      "position": [
-        650,
-        300
-      ],
+      "position": [720, 300],
       "credentials": {
-        "postgres": "Railway Postgres"
+        "postgres": "<<<YOUR POSTGRES CREDS HERE>>>"
       }
     },
     {
       "parameters": {
         "responseCode": 200,
-        "responseData": "={{ $json }}"
+        "responseData": "={{ { stored: true, intent: $json.intent } }}"
       },
-      "name": "Respond",
+      "name": "Respond to Caller",
       "type": "n8n-nodes-base.respondToWebhook",
       "typeVersion": 1,
-      "position": [
-        850,
-        300
-      ]
+      "position": [960, 300]
     }
   ],
   "connections": {
-    "Webhook": {
-      "main": [
-        [
-          {
-            "node": "Preprocess",
-            "type": "main",
-            "index": 0
-          }
-        ]
-      ]
-    },
-    "Preprocess": {
-      "main": [
-        [
-          {
-            "node": "Postgres",
-            "type": "main",
-            "index": 0
-          }
-        ]
-      ]
-    },
-    "Postgres": {
-      "main": [
-        [
-          {
-            "node": "Respond",
-            "type": "main",
-            "index": 0
-          }
-        ]
-      ]
-    }
-  }
+    "Inbound Webhook": { "main": [[{ "node": "Parse / Classify", "type": "main", "index": 0 }]] },
+    "Parse / Classify": { "main": [[{ "node": "Postgres ↳ Insert", "type": "main", "index": 0 }]] },
+    "Postgres ↳ Insert": { "main": [[{ "node": "Respond to Caller", "type": "main", "index": 0 }]] }
+  },
+  "settings": {
+    "executionTimeout": 300
+  },
+  "tags": ["kingcro", "agent-builder", "generic"]
 }
