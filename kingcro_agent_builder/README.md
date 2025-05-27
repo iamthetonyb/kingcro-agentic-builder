@@ -3,8 +3,7 @@
 This repo is a **minimal, self‑hostable scaffold** for a voice/chat agent‑builder.  
 It lets a non‑technical client _interview_ an assistant and automatically stores the
 collected requirements (as JSON) then hands them off to an automation engine (n8n)
-which can chain tools, generate prompt mind‑maps, draft workflow JSON for Tixae /
-Ultravox, and finally persist everything to Supabase/Postgres.
+which can chain tools, generate prompt mind‑maps, draft workflow JSON for n8n, & finally persist everything to Supabase/Postgres.
 
 **Highlights**
 
