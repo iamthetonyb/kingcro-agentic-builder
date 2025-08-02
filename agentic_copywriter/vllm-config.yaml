@@ -1,0 +1,47 @@
+# vLLM Configuration for Mistral AI Voxtral Mini Model (Mac Optimized)
+model: "mistralai/Voxtral-Mini-3B-2507"  # 3B parameters - optimal for Mac with 8-16GB RAM
+dtype: "half"
+max_model_len: 32768  # Voxtral Mini supports 32k context length
+gpu_memory_utilization: 0.5  # Conservative for Mac (reduced for Mini model)
+tensor_parallel_size: 1
+pipeline_parallel_size: 1
+
+# API Configuration
+host: "0.0.0.0"
+port: 8000
+api_key: "${VLLM_API_KEY}"
+
+# Voxtral Mini specific settings (Mac optimized)
+audio:
+  sample_rate: 16000
+  channels: 1
+  format: "wav"
+  max_duration: 1800  # 30 minutes max per audio file
+
+# Model serving options (Mac optimized for Mini)
+engine_args:
+  seed: 42
+  temperature: 0.0  # CRITICAL: Always 0.0 for transcription accuracy
+  max_tokens: 2048
+  stream: true
+  # Mac-specific optimizations for Mini model
+  max_num_seqs: 2  # Reduced for Mini model on Mac
+  max_num_batched_tokens: 512  # Conservative batching for 3B model
+  
+# Voxtral Mini features
+features:
+  transcription: true
+  understanding: true  # Built-in Q&A and summarization
+  multilingual: true   # Automatic language detection
+  function_calling: false  # Disabled for Mini to save resources
+  
+# Logging
+log_level: "info"
+log_requests: true
+
+# Mac deployment notes for Voxtral Mini:
+# - Voxtral Mini (3B): ~4-6GB RAM usage (much less than Small/Large)
+# - Runs efficiently on Apple Silicon and Intel Macs
+# - Perfect balance of quality and performance for Mac development
+# - For systems with 8GB RAM, this is the recommended model
+# - Temperature MUST be 0.0 for transcription accuracy
